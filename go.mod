@@ -6,7 +6,6 @@ require gopkg.in/yaml.v3 v3.0.1
 
 require (
 	github.com/ajg/form v1.5.1 // indirect
-	github.com/metacubex/tfo-go v0.0.0-20240523172816-7577e13e1731 // indirect
 	golang.org/x/exp v0.0.0-20220303212507-bbda1eaf7a17 // indirect
 )
 
@@ -18,7 +17,7 @@ require (
 	github.com/gofrs/uuid/v5 v5.2.0
 	github.com/sagernet/sing v0.4.1
 	github.com/samber/lo v1.39.0
-	github.com/sirupsen/logrus v1.9.3 // indirect
+	github.com/sirupsen/logrus v1.9.3
 	github.com/zhangyunhao116/fastrand v0.5.0
 	golang.org/x/sys v0.21.0 // indirect
 )

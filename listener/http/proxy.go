@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -46,9 +47,17 @@ func HandleConn(c net.Conn, tunnel C.Tunnel, cache *lru.LruCache[string, bool], 
 
 		var resp *http.Response
 
+		// 走代理的时候，发送的是Connect的请求
 		log.Infoln("request.Method: %s", request.Method)
 		if request.Method == http.MethodConnect {
-			
+			// 手动返回
+			if _, err = fmt.Fprintf(conn, "HTTP/%d.%d %03d %s\r\n\r\n", request.ProtoMajor, request.ProtoMinor, http.StatusOK, "Connection established"); err != nil {
+				break
+			}
+
+			tunnel.HandleTCPConn(inbound.NewHTTPS(request, conn, additions...))
+
+			return
 		}
 
 		host := request.Header.Get("Host")

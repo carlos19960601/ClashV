@@ -41,7 +41,6 @@ func ApplyConfig(cfg *config.Config, force bool) {
 	updateListeners(cfg.General, cfg.Listeners, force)
 	tunnel.OnInnerLoading()
 
-	initInnerTcp()
 	tunnel.OnRunning()
 
 	log.SetLevel(cfg.General.LogLevel)

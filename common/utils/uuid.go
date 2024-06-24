@@ -17,3 +17,8 @@ func NewUUIDV6() uuid.UUID {
 	u, _ := UnsafeUUIDGenerator.NewV6() // fastrand.Read wouldn't cause error, so ignore err is safe
 	return u
 }
+
+func NewUUIDV4() uuid.UUID {
+	u, _ := UnsafeUUIDGenerator.NewV4() // fastrand.Read wouldn't cause error, so ignore err is safe
+	return u
+}
