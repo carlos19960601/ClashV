@@ -5,3 +5,7 @@ import (
 )
 
 var tunnel C.Tunnel
+
+func New(t C.Tunnel) {
+	tunnel = t
+}

@@ -91,6 +91,7 @@ func (at AdapterType) String() string {
 }
 
 type Proxy interface {
+	ProxyAdapter
 }
 
 type ProxyAdapter interface {

@@ -17,6 +17,7 @@ type Config struct {
 	General   *General
 	Proxies   map[string]C.Proxy
 	Providers map[string]providerTypes.ProxyProvider
+	Listeners map[string]C.InboundListener
 }
 
 type RawConfig struct {
@@ -29,6 +30,8 @@ type RawConfig struct {
 	Proxy      []map[string]any `yaml:"proxies"`
 	ProxyGroup []map[string]any `yaml:"proxy-groups"`
 	Rule       []string         `yaml:"rules"`
+
+	Listeners []map[string]any `yaml:"listeners"`
 }
 
 type General struct {
@@ -40,10 +43,11 @@ type General struct {
 }
 
 type Inbound struct {
-	Port      int  `json:"port"`
-	SocksPort int  `json:"socks-port"`
-	MixedPort int  `json:"mixed-port"`
-	AllowLan  bool `json:"allow-lan"`
+	Port        int    `json:"port"`
+	SocksPort   int    `json:"socks-port"`
+	MixedPort   int    `json:"mixed-port"`
+	AllowLan    bool   `json:"allow-lan"`
+	BindAddress string `json:"bind-address"`
 }
 
 type Controller struct {
@@ -64,6 +68,12 @@ func ParseRawConfig(rawCfg *RawConfig) (*Config, error) {
 	config := &Config{}
 	startTime := time.Now()
 
+	general, err := parseGeneral(rawCfg)
+	if err != nil {
+		return nil, err
+	}
+	config.General = general
+
 	proxies, providers, err := parseProxies(rawCfg)
 	if err != nil {
 		return nil, err
@@ -71,10 +81,19 @@ func ParseRawConfig(rawCfg *RawConfig) (*Config, error) {
 	config.Proxies = proxies
 	config.Providers = providers
 
-	elapsedTime := time.Since(startTime)
-	log.Infoln("初始化配置完成， 耗时: %dms", elapsedTime.Seconds())
+	elapsedTime := time.Since(startTime) / time.Millisecond
+	log.Infoln("初始化配置完成， 耗时: %dms", elapsedTime)
 
 	return config, nil
+}
+
+func parseGeneral(cfg *RawConfig) (*General, error) {
+	return &General{
+		Inbound: Inbound{
+			Port:      cfg.Port,
+			MixedPort: cfg.MixedPort,
+		},
+	}, nil
 }
 
 func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providerMap map[string]providerTypes.ProxyProvider, err error) {
@@ -82,13 +101,21 @@ func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providerMap map[s
 	providerMap = make(map[string]providerTypes.ProxyProvider)
 	proxiesConfig := cfg.Proxy
 	groupConfig := cfg.ProxyGroup
-	providerConfig := cfg.ProxyProvider
+
+	var proxyList []string
 
 	for idx, mapping := range proxiesConfig {
 		proxy, err := adapter.ParseProxy(mapping)
 		if err != nil {
 			return nil, nil, fmt.Errorf("proxy: %d: %w", idx, err)
 		}
+
+		if _, exist := proxies[proxy.Name()]; exist {
+			return nil, nil, fmt.Errorf("代理: %s 名称重复", proxy.Name())
+		}
+
+		proxies[proxy.Name()] = proxy
+		proxyList = append(proxyList, proxy.Name())
 	}
 
 	for idx, mapping := range groupConfig {
@@ -96,8 +123,19 @@ func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providerMap map[s
 		if !existName {
 			return nil, nil, fmt.Errorf("代理组 %d: 名称缺失", idx)
 		}
-
+		proxyList = append(proxyList, groupName)
 	}
+
+	var ps []C.Proxy
+	for _, v := range proxyList {
+		if proxies[v].Type() == C.Pass {
+			continue
+		}
+
+		ps = append(ps, proxies[v])
+	}
+
+	return proxies, providerMap, nil
 
 }
 

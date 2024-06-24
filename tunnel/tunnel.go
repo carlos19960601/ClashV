@@ -7,7 +7,8 @@ import (
 )
 
 var (
-	status = newAtomicStatus(Suspend)
+	status    = newAtomicStatus(Suspend)
+	listeners = make(map[string]C.InboundListener)
 )
 
 func OnSuspend() {
@@ -26,6 +27,7 @@ type tunnel struct{}
 
 var Tunnel C.Tunnel = tunnel{}
 
+// HandleTCPConn implements C.Tunnel
 func (t tunnel) HandleTCPConn(conn net.Conn, metadata *C.Metadata) {
 
 }

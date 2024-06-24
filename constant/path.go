@@ -5,7 +5,7 @@ import (
 	P "path"
 )
 
-const Name = "mihomo"
+const Name = "clash"
 
 var Path = func() *path {
 	homeDir, err := os.UserHomeDir()

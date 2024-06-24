@@ -29,13 +29,13 @@ type Event struct {
 
 func Infoln(format string, v ...any) {
 	event := newLog(INFO, format, v...)
-	logCh <- event
+	// logCh <- event
 	print(event)
 }
 
 func Errorln(format string, v ...any) {
 	event := newLog(ERROR, format, v...)
-	logCh <- event
+	// logCh <- event
 	print(event)
 }
 

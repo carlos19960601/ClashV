@@ -7,6 +7,8 @@ import (
 
 	"github.com/carlos19960601/ClashV/config"
 	C "github.com/carlos19960601/ClashV/constant"
+	"github.com/carlos19960601/ClashV/listener"
+	"github.com/carlos19960601/ClashV/listener/inner"
 	"github.com/carlos19960601/ClashV/log"
 	"github.com/carlos19960601/ClashV/tunnel"
 )
@@ -36,13 +38,29 @@ func ApplyConfig(cfg *config.Config, force bool) {
 
 	tunnel.OnSuspend()
 
+	updateListeners(cfg.General, cfg.Listeners, force)
 	tunnel.OnInnerLoading()
 
 	initInnerTcp()
-	loadProxyProvider(cfg.Providers)
 	tunnel.OnRunning()
 
 	log.SetLevel(cfg.General.LogLevel)
+}
+
+func updateListeners(general *config.General, listeners map[string]C.InboundListener, force bool) {
+	listener.PatchInboundListeners(listeners, tunnel.Tunnel, true)
+	if !force {
+		return
+	}
+	allowLan := general.AllowLan
+	listener.SetAllowLan(allowLan)
+
+	bindAddress := general.BindAddress
+	listener.SetBindAddress(bindAddress)
+
+	listener.ReCreateHTTP(general.Port, tunnel.Tunnel)
+	listener.ReCreateSocks(general.SocksPort, tunnel.Tunnel)
+	listener.ReCreateMixed(general.MixedPort, tunnel.Tunnel)
 }
 
 func initInnerTcp() {
