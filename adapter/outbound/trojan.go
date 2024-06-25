@@ -5,6 +5,8 @@ import (
 	"net"
 	"strconv"
 
+	"github.com/carlos19960601/ClashV/component/dialer"
+	C "github.com/carlos19960601/ClashV/constant"
 	"github.com/carlos19960601/ClashV/transport/trojan"
 )
 
@@ -24,7 +26,7 @@ type TrojanOption struct {
 	SkipCertVerify bool   `proxy:"skip-cert-verify,omitempty"`
 }
 
-func NewTrojan(option TrojanOption) (*Trojan, error) {
+func NewTrojan(option TrojanOption) (C.Proxy, error) {
 	addr := net.JoinHostPort(option.Server, strconv.Itoa(option.Port))
 
 	tOption := &trojan.Option{
@@ -46,6 +48,6 @@ func NewTrojan(option TrojanOption) (*Trojan, error) {
 }
 
 // DialContext implements C.ProxyAdapter
-func (t *Trojan) DialContext(ctx context.Context) {
-	
+func (t *Trojan) DialContext(ctx context.Context, metadata *C.Metadata, opts ...dialer.Option) (C.Conn, error) {
+	return nil, nil
 }

@@ -15,6 +15,10 @@ type Base struct {
 	id   string
 }
 
+type BasicOption struct {
+	
+}
+
 // Id implements C.ProxyAdapter
 func (b *Base) Id() string {
 	if b.id == "" {

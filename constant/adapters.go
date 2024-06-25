@@ -1,6 +1,11 @@
 package constant
 
-import "context"
+import (
+	"context"
+
+	N "github.com/carlos19960601/ClashV/common/net"
+	"github.com/carlos19960601/ClashV/component/dialer"
+)
 
 // Adapter Type
 const (
@@ -101,5 +106,17 @@ type ProxyAdapter interface {
 	SupportUDP() bool
 	MarshalJSON() ([]byte, error)
 
-	DialContext(ctx context.Context)
+	DialContext(ctx context.Context, metadata *Metadata, opts ...dialer.Option) (Conn, error)
 }
+
+type Conn interface {
+	N.ExtendedConn
+}
+
+const (
+	DefaultTCPTimeout = dialer.DefaultTCPTimeout
+	DefaultUDPTimeout = dialer.DefaultUDPTimeout
+	DefaultDropTime   = 12 * DefaultTCPTimeout
+	DefaultTLSTimeout = DefaultTCPTimeout
+	DefaultTestURL    = "https://www.gstatic.com/generate_204"
+)

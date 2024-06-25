@@ -90,6 +90,21 @@ type Metadata struct {
 	Host    string     `json:"host"`
 	InIP    netip.Addr `json:"inboundIP"`
 	InPort  uint16     `json:"inboundPort,string"`
+
+	// Only domain rule
+	SniffHost string `json:"sniffHost"`
+}
+
+func (m *Metadata) Valid() bool {
+	return m.Host != "" || m.DstIP.IsValid()
+}
+
+func (m *Metadata) RuleHost() string {
+	if len(m.SniffHost) == 0 {
+		return m.Host
+	} else {
+		return m.SniffHost
+	}
 }
 
 func (m *Metadata) SetRemoteAddr(addr net.Addr) error {

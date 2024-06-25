@@ -7,6 +7,7 @@ import (
 
 	"github.com/carlos19960601/ClashV/config"
 	C "github.com/carlos19960601/ClashV/constant"
+	"github.com/carlos19960601/ClashV/constant/provider"
 	"github.com/carlos19960601/ClashV/listener"
 	"github.com/carlos19960601/ClashV/listener/inner"
 	"github.com/carlos19960601/ClashV/log"
@@ -38,12 +39,22 @@ func ApplyConfig(cfg *config.Config, force bool) {
 
 	tunnel.OnSuspend()
 
+	updateProxies(cfg.Proxies, cfg.Providers)
+	updateGeneral(cfg.General)
 	updateListeners(cfg.General, cfg.Listeners, force)
 	tunnel.OnInnerLoading()
 
 	tunnel.OnRunning()
 
 	log.SetLevel(cfg.General.LogLevel)
+}
+
+func updateProxies(proxies map[string]C.Proxy, providers map[string]provider.ProxyProvider) {
+	tunnel.UpdateProxies(proxies, providers)
+}
+
+func updateGeneral(general *config.General) {
+	tunnel.SetMode(general.Mode)
 }
 
 func updateListeners(general *config.General, listeners map[string]C.InboundListener, force bool) {
