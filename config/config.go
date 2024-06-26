@@ -2,11 +2,15 @@ package config
 
 import (
 	"fmt"
+	"net/netip"
 	"strings"
 	"time"
 
 	"github.com/carlos19960601/ClashV/adapter"
 	"github.com/carlos19960601/ClashV/adapter/outbound"
+	"github.com/carlos19960601/ClashV/adapter/outboundgroup"
+	"github.com/carlos19960601/ClashV/component/resolver"
+	"github.com/carlos19960601/ClashV/component/trie"
 	C "github.com/carlos19960601/ClashV/constant"
 	providerTypes "github.com/carlos19960601/ClashV/constant/provider"
 	"github.com/carlos19960601/ClashV/log"
@@ -21,6 +25,7 @@ type Config struct {
 	Proxies   map[string]C.Proxy
 	Providers map[string]providerTypes.ProxyProvider
 	Listeners map[string]C.InboundListener
+	Hosts     *trie.DomainTrie[resolver.HostValue]
 	Rules     []C.Rule
 	SubRules  map[string][]C.Rule
 }
@@ -32,6 +37,7 @@ type RawConfig struct {
 	MixedPort   int    `yaml:"mixed-port" json:"mixed-port"`
 	AllowLan    bool   `yaml:"allow-lan" json:"allow-lan"`
 
+	Hosts      map[string]any      `yaml:"hosts" json:"hosts"`
 	Proxy      []map[string]any    `yaml:"proxies"`
 	ProxyGroup []map[string]any    `yaml:"proxy-groups"`
 	Rule       []string            `yaml:"rules"`
@@ -100,6 +106,12 @@ func ParseRawConfig(rawCfg *RawConfig) (*Config, error) {
 	}
 	config.Rules = rules
 
+	hosts, err := parseHosts(rawCfg)
+	if err != nil {
+		return nil, err
+	}
+	config.Hosts = hosts
+
 	elapsedTime := time.Since(startTime) / time.Millisecond
 	log.Infoln("初始化配置完成， 耗时: %dms", elapsedTime)
 
@@ -148,7 +160,22 @@ func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providerMap map[s
 		proxyList = append(proxyList, groupName)
 	}
 
+	for idx, mapping := range groupConfig {
+		group, err := outboundgroup.ParseProxyGroup(mapping, proxies)
+		if err != nil {
+			return nil, nil, fmt.Errorf("代理组[%d]: %w", idx, &err)
+		}
+
+		groupName := group.Name()
+		if _, exist := proxies[groupName]; exist {
+			return nil, nil, fmt.Errorf("代理组 %s: 名称重复", groupName)
+		}
+
+		proxies[groupName] = adapter.NewProxy(group)
+	}
+
 	var ps []C.Proxy
+	// proxyList 包括代理和代理组
 	for _, v := range proxyList {
 		if proxies[v].Type() == C.Pass {
 			continue
@@ -223,6 +250,25 @@ func parseRules(rulesConfig []string, proxies map[string]C.Proxy, subRules map[s
 	}
 
 	return rules, nil
+}
+
+func parseHosts(cfg *RawConfig) (*trie.DomainTrie[resolver.HostValue], error) {
+	tree := trie.New[resolver.HostValue]()
+
+	hostValue, _ := resolver.NewHostValueByIPs([]netip.Addr{netip.AddrFrom4([4]byte{127, 0, 0, 1})})
+	if err := tree.Insert("localhost", hostValue); err != nil {
+		log.Errorln("添加localhost到host失败: %s", err.Error())
+	}
+
+	if len(cfg.Hosts) != 0 {
+		for range cfg.Hosts {
+
+		}
+
+	}
+	tree.Optimize()
+
+	return tree, nil
 }
 
 func UnmarshalRawConfig(buf []byte) (*RawConfig, error) {

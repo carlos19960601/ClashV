@@ -27,6 +27,12 @@ type Event struct {
 	Payload  string
 }
 
+func Debugln(format string, v ...any) {
+	event := newLog(DEBUG, format, v...)
+	// logCh <- event
+	print(event)
+}
+
 func Infoln(format string, v ...any) {
 	event := newLog(INFO, format, v...)
 	// logCh <- event

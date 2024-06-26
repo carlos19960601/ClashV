@@ -13,6 +13,8 @@ func ParseRule(tp, payload, target string, params []string, subRules map[string]
 		parsed = RC.NewDomain(payload, target)
 	case "DOMAIN-SUFFIX":
 		parsed = RC.NewDomainSuffix(payload, target)
+	case "DOMAIN-KEYWORD":
+		parsed = RC.NewDomainKeyword(payload, target)
 	default:
 		parseErr = fmt.Errorf("不支持的rule")
 	}

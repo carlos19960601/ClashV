@@ -8,6 +8,7 @@ import (
 	N "github.com/carlos19960601/ClashV/common/net"
 	"github.com/carlos19960601/ClashV/common/utils"
 	C "github.com/carlos19960601/ClashV/constant"
+	"github.com/carlos19960601/ClashV/log"
 )
 
 type ConnContext struct {
@@ -17,6 +18,8 @@ type ConnContext struct {
 }
 
 func NewConnContext(conn net.Conn, metadata *C.Metadata) *ConnContext {
+	log.Infoln(metadata.String())
+
 	return &ConnContext{
 		id:       utils.NewUUIDV4(),
 		metadata: metadata,

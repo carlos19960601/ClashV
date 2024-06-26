@@ -5,6 +5,8 @@ import (
 	"os"
 	"sync"
 
+	"github.com/carlos19960601/ClashV/component/resolver"
+	"github.com/carlos19960601/ClashV/component/trie"
 	"github.com/carlos19960601/ClashV/config"
 	C "github.com/carlos19960601/ClashV/constant"
 	"github.com/carlos19960601/ClashV/constant/provider"
@@ -40,6 +42,8 @@ func ApplyConfig(cfg *config.Config, force bool) {
 	tunnel.OnSuspend()
 
 	updateProxies(cfg.Proxies, cfg.Providers)
+	updateRules(cfg.Rules, cfg.SubRules)
+	updateHosts(cfg.Hosts)
 	updateGeneral(cfg.General)
 	updateListeners(cfg.General, cfg.Listeners, force)
 	tunnel.OnInnerLoading()
@@ -53,8 +57,16 @@ func updateProxies(proxies map[string]C.Proxy, providers map[string]provider.Pro
 	tunnel.UpdateProxies(proxies, providers)
 }
 
+func updateRules(rules []C.Rule, subRules map[string][]C.Rule) {
+	tunnel.UpdateRules(rules, subRules)
+}
+
 func updateGeneral(general *config.General) {
 	tunnel.SetMode(general.Mode)
+}
+
+func updateHosts(tree *trie.DomainTrie[resolver.HostValue]) {
+	resolver.DefaultHosts = resolver.NewHosts(tree)
 }
 
 func updateListeners(general *config.General, listeners map[string]C.InboundListener, force bool) {

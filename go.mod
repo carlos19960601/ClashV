@@ -16,6 +16,7 @@ require (
 	github.com/go-chi/cors v1.2.1
 	github.com/go-chi/render v1.0.3
 	github.com/gofrs/uuid/v5 v5.2.0
+	github.com/puzpuzpuz/xsync/v3 v3.2.0
 	github.com/sagernet/sing v0.4.1
 	github.com/samber/lo v1.39.0
 	github.com/sirupsen/logrus v1.9.3

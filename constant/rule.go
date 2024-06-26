@@ -114,4 +114,6 @@ type Rule interface {
 	Adapter() string
 	Payload() string
 	Match(metadata *Metadata) (bool, string)
+	ShouldResolveIP() bool
+	ShouldFindProcess() bool
 }

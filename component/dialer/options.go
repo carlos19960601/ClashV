@@ -34,3 +34,9 @@ func WithOnlySingleStack(isIPv4 bool) Option {
 		}
 	}
 }
+
+func WithResolver(r resolver.Resolver) Option {
+	return func(opt *option) {
+		opt.resolver = r
+	}
+}
