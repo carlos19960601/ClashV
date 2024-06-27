@@ -11,7 +11,7 @@ type GroupBase struct {
 }
 
 type GroupBaseOption struct {
-	outbound.BasicOption
+	outbound.BaseOption
 }
 
 func NewGroupBase(opt GroupBaseOption) *GroupBase {

@@ -2,7 +2,7 @@ package atomic
 
 import "sync/atomic"
 
-type TypeValue[T any] struct {
+type TypedValue[T any] struct {
 	_     noCopy
 	value atomic.Value
 }
@@ -18,7 +18,7 @@ type tValue[T any] struct {
 	value T
 }
 
-func (t *TypeValue[T]) Load() T {
+func (t *TypedValue[T]) Load() T {
 	value := t.value.Load()
 	if value == nil {
 		return DefaultValue[T]()
@@ -27,7 +27,7 @@ func (t *TypeValue[T]) Load() T {
 	return value.(tValue[T]).value
 }
 
-func (t *TypeValue[T]) Store(value T) {
+func (t *TypedValue[T]) Store(value T) {
 	t.value.Store(tValue[T]{value})
 }
 

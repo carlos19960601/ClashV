@@ -128,6 +128,10 @@ func (m *Metadata) SetRemoteAddr(addr net.Addr) error {
 	return m.SetRemoteAddress(addr.String())
 }
 
+func (m *Metadata) AddrPort() netip.AddrPort {
+	return netip.AddrPortFrom(m.DstIP.Unmap(), m.DstPort)
+}
+
 func (m *Metadata) SetRemoteAddress(rawAddress string) error {
 	host, port, err := net.SplitHostPort(rawAddress)
 	if err != nil {

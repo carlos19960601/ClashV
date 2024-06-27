@@ -1,5 +1,7 @@
 package provider
 
+import "github.com/carlos19960601/ClashV/constant"
+
 const (
 	Proxy ProviderType = iota
 	Rule
@@ -20,10 +22,10 @@ func (pt ProviderType) String() string {
 
 type Provider interface {
 	Name() string
+	Type() ProviderType
 }
 
 type ProxyProvider interface {
 	Provider
+	Proxies() []constant.Proxy
 }
-
-

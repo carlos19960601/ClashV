@@ -2,6 +2,7 @@ package constant
 
 import (
 	"context"
+	"fmt"
 
 	N "github.com/carlos19960601/ClashV/common/net"
 	"github.com/carlos19960601/ClashV/component/dialer"
@@ -107,10 +108,14 @@ type ProxyAdapter interface {
 	MarshalJSON() ([]byte, error)
 
 	DialContext(ctx context.Context, metadata *Metadata, opts ...dialer.Option) (Conn, error)
+
+	// Unwrap 从代理组中获取代理
+	Unwrap(metadata *Metadata, touch bool) Proxy
 }
 
 type Conn interface {
 	N.ExtendedConn
+	Connection
 }
 
 const (
@@ -120,3 +125,20 @@ const (
 	DefaultTLSTimeout = DefaultTCPTimeout
 	DefaultTestURL    = "https://www.gstatic.com/generate_204"
 )
+
+type Chain []string
+
+func (c Chain) String() string {
+	switch len(c) {
+	case 0:
+		return ""
+	case 1:
+		return c[0]
+	default:
+		return fmt.Sprintf("%s[%s]", c[len(c)-1], c[0])
+	}
+}
+
+type Connection interface {
+	Chains() Chain
+}

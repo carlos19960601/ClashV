@@ -141,7 +141,7 @@ func handleTCPConn(connCtx C.ConnContext) {
 		log.Infoln("[TCP] %s --> % 使用 GLOBAL", metadata.SourceDetail(), metadata.RemoteAddress())
 	default:
 		log.Infoln(
-			"[TCP] %s --> %s 没有匹配到规则，使用DIRECT",
+			"[TCP] %s --> %s 没有匹配到规则, 使用DIRECT",
 			metadata.SourceDetail(),
 			metadata.RemoteAddress(),
 		)

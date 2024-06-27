@@ -63,6 +63,12 @@ func parseAddr(ctx context.Context, network, address string, preferResolver reso
 		if preferResolver == nil {
 			ips, err = resolver.LookupIPv4ProxyServerHost(ctx, host)
 		}
+	default:
+		if preferResolver == nil {
+			ips, err = resolver.LookupIPProxyServerHost(ctx, host)
+		} else {
+			ips, err = resolver.LookupIPWithResolver(ctx, host, preferResolver)
+		}
 	}
 
 	return ips, port, nil
@@ -88,5 +94,10 @@ func serialDialContext(ctx context.Context, network string, ips []netip.Addr, po
 }
 
 func dualStackDialContext(ctx context.Context, dialFn dialFunc, network string, ips []netip.Addr, port string, opt *option) (net.Conn, error) {
+	ipv4s, ipv6s := resolver.SortationAddr(ips)
+	if len(ipv4s) == 0 && len(ipv6s) == 0 {
+		return nil, ErrorNoIpAddress
+	}
+
 	return nil, nil
 }

@@ -45,6 +45,7 @@ func ApplyConfig(cfg *config.Config, force bool) {
 	updateRules(cfg.Rules, cfg.SubRules)
 	updateHosts(cfg.Hosts)
 	updateGeneral(cfg.General)
+	updateDNS(cfg.DNS)
 	updateListeners(cfg.General, cfg.Listeners, force)
 	tunnel.OnInnerLoading()
 
@@ -83,6 +84,13 @@ func updateListeners(general *config.General, listeners map[string]C.InboundList
 	listener.ReCreateHTTP(general.Port, tunnel.Tunnel)
 	listener.ReCreateSocks(general.SocksPort, tunnel.Tunnel)
 	listener.ReCreateMixed(general.MixedPort, tunnel.Tunnel)
+}
+
+func updateDNS(c *config.DNS) {
+	if !c.Enable {
+		resolver.DefaultResolver = nil
+		return
+	}
 }
 
 func initInnerTcp() {

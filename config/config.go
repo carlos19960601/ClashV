@@ -9,6 +9,7 @@ import (
 	"github.com/carlos19960601/ClashV/adapter"
 	"github.com/carlos19960601/ClashV/adapter/outbound"
 	"github.com/carlos19960601/ClashV/adapter/outboundgroup"
+	"github.com/carlos19960601/ClashV/adapter/provider"
 	"github.com/carlos19960601/ClashV/component/resolver"
 	"github.com/carlos19960601/ClashV/component/trie"
 	C "github.com/carlos19960601/ClashV/constant"
@@ -22,6 +23,7 @@ import (
 
 type Config struct {
 	General   *General
+	DNS       *DNS
 	Proxies   map[string]C.Proxy
 	Providers map[string]providerTypes.ProxyProvider
 	Listeners map[string]C.InboundListener
@@ -37,11 +39,13 @@ type RawConfig struct {
 	MixedPort   int    `yaml:"mixed-port" json:"mixed-port"`
 	AllowLan    bool   `yaml:"allow-lan" json:"allow-lan"`
 
-	Hosts      map[string]any      `yaml:"hosts" json:"hosts"`
-	Proxy      []map[string]any    `yaml:"proxies"`
-	ProxyGroup []map[string]any    `yaml:"proxy-groups"`
-	Rule       []string            `yaml:"rules"`
-	SubRules   map[string][]string `yaml:"sub-rules"`
+	Hosts         map[string]any            `yaml:"hosts" json:"hosts"`
+	Proxy         []map[string]any          `yaml:"proxies"`
+	ProxyGroup    []map[string]any          `yaml:"proxy-groups"`
+	Rule          []string                  `yaml:"rules"`
+	SubRules      map[string][]string       `yaml:"sub-rules"`
+	DNS           RawDNS                    `yaml:"dns" json:"dns"`
+	ProxyProvider map[string]map[string]any `yaml:"proxy-providers"`
 
 	Listeners []map[string]any `yaml:"listeners"`
 }
@@ -74,6 +78,17 @@ func Parse(buf []byte) (*Config, error) {
 	}
 
 	return ParseRawConfig(rawCfg)
+}
+
+type DNS struct {
+	Enable bool `yaml:"enable"`
+}
+
+type RawDNS struct {
+	Enable            bool      `yaml:"enable" json:"enable"`
+	IPv6              bool      `yaml:"ipv6" json:"ipv6"`
+	DefaultNameserver []string  `yaml:"default-nameserver" json:"default-nameserver"`
+	EnhancedMode      C.DNSMode `yaml:"enhanced-mode" json:"enhanced-mode"`
 }
 
 func ParseRawConfig(rawCfg *RawConfig) (*Config, error) {
@@ -112,6 +127,12 @@ func ParseRawConfig(rawCfg *RawConfig) (*Config, error) {
 	}
 	config.Hosts = hosts
 
+	dnsCfg, err := parseDNS(rawCfg, hosts, rules)
+	if err != nil {
+		return nil, err
+	}
+	config.DNS = dnsCfg
+
 	elapsedTime := time.Since(startTime) / time.Millisecond
 	log.Infoln("初始化配置完成， 耗时: %dms", elapsedTime)
 
@@ -127,11 +148,20 @@ func parseGeneral(cfg *RawConfig) (*General, error) {
 	}, nil
 }
 
-func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providerMap map[string]providerTypes.ProxyProvider, err error) {
+func parseDNS(rawCfg *RawConfig, host *trie.DomainTrie[resolver.HostValue], rules []C.Rule) (*DNS, error) {
+	cfg := rawCfg.DNS
+
+	return &DNS{
+		Enable: cfg.Enable,
+	}, nil
+}
+
+func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providersMap map[string]providerTypes.ProxyProvider, err error) {
 	proxies = make(map[string]C.Proxy)
-	providerMap = make(map[string]providerTypes.ProxyProvider)
+	providersMap = make(map[string]providerTypes.ProxyProvider)
 	proxiesConfig := cfg.Proxy
-	groupConfig := cfg.ProxyGroup
+	groupsConfig := cfg.ProxyGroup
+	providersConfig := cfg.ProxyProvider
 
 	var proxyList []string
 
@@ -152,18 +182,27 @@ func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providerMap map[s
 		proxyList = append(proxyList, proxy.Name())
 	}
 
-	for idx, mapping := range groupConfig {
+	for idx, mapping := range groupsConfig {
 		groupName, existName := mapping["name"].(string)
 		if !existName {
 			return nil, nil, fmt.Errorf("代理组 %d: 名称缺失", idx)
 		}
 		proxyList = append(proxyList, groupName)
 	}
+	if err := proxyGroupDagSort(groupsConfig); err != nil {
+		return nil, nil, err
+	}
 
-	for idx, mapping := range groupConfig {
-		group, err := outboundgroup.ParseProxyGroup(mapping, proxies)
+	for name := range providersConfig {
+		if name == provider.ReservedName {
+			return nil, nil, fmt.Errorf("不能定义provider: %s", provider.ReservedName)
+		}
+	}
+
+	for idx, mapping := range groupsConfig {
+		group, err := outboundgroup.ParseProxyGroup(mapping, proxies, providersMap)
 		if err != nil {
-			return nil, nil, fmt.Errorf("代理组[%d]: %w", idx, &err)
+			return nil, nil, fmt.Errorf("代理组[%d]: %w", idx, err)
 		}
 
 		groupName := group.Name()
@@ -184,7 +223,7 @@ func parseProxies(cfg *RawConfig) (proxies map[string]C.Proxy, providerMap map[s
 		ps = append(ps, proxies[v])
 	}
 
-	return proxies, providerMap, nil
+	return proxies, providersMap, nil
 
 }
 

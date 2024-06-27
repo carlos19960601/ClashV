@@ -7,6 +7,7 @@ import (
 
 	"github.com/puzpuzpuz/xsync/v3"
 
+	"github.com/carlos19960601/ClashV/common/callback"
 	C "github.com/carlos19960601/ClashV/constant"
 )
 
@@ -22,6 +23,22 @@ func NewDetector() *Detector {
 		connMap:       xsync.NewMapOf[netip.AddrPort, struct{}](),
 		packetConnMap: xsync.NewMapOf[uint16, struct{}](),
 	}
+}
+
+func (l *Detector) NewConn(conn C.Conn) C.Conn {
+	metadata := C.Metadata{}
+	if metadata.SetRemoteAddr(conn.LocalAddr()) != nil {
+		return conn
+	}
+	connAddr := metadata.AddrPort()
+	if !connAddr.IsValid() {
+		return conn
+	}
+
+	l.connMap.Store(connAddr, struct{}{})
+	return callback.NewCloseCallbackConn(conn, func() {
+		l.connMap.Delete(connAddr)
+	})
 }
 
 func (l *Detector) CheckConn(metadata *C.Metadata) error {

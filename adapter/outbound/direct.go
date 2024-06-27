@@ -37,7 +37,6 @@ func (d *Direct) DialContext(ctx context.Context, metadata *C.Metadata, opts ...
 		return nil, err
 	}
 	opts = append(opts, dialer.WithResolver(resolver.DefaultResolver))
-
 	c, err := dialer.DialContext(ctx, "tcp", metadata.RemoteAddress(), d.Base.DialOptions(opts...)...)
 	if err != nil {
 		return nil, err
